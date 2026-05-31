@@ -9,6 +9,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent
 PARTS = ROOT / "payload_parts"
 ARCHIVE = ROOT / "payload.tar.gz"
+EXPECTED_B64_LENGTH = 63096
+KNOWN_REPAIRS = {
+    "TSLYZIClatWpLYQOU": "TSLYZIClatWpVLYQOU",
+}
 
 
 def main() -> None:
@@ -17,7 +21,14 @@ def main() -> None:
         chunks.append(path.read_text(encoding="ascii"))
     if not chunks:
         raise SystemExit("No payload parts found.")
-    ARCHIVE.write_bytes(base64.b64decode("".join(chunks)))
+
+    payload = "".join("".join(chunks).split())
+    for broken, fixed in KNOWN_REPAIRS.items():
+        payload = payload.replace(broken, fixed)
+    if len(payload) != EXPECTED_B64_LENGTH:
+        raise SystemExit(f"Unexpected payload length: {len(payload)}")
+
+    ARCHIVE.write_bytes(base64.b64decode(payload))
     with tarfile.open(ARCHIVE, "r:gz") as archive:
         archive.extractall(ROOT)
     ARCHIVE.unlink(missing_ok=True)
