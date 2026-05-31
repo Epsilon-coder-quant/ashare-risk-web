@@ -3,7 +3,7 @@ services:
     name: ashare-risk-web
     runtime: python
     plan: free
-    buildCommand: pip install -r requirements.txt
+    buildCommand: python restore_payload.py && pip install -r requirements.txt
     startCommand: streamlit run app.py --server.address 0.0.0.0 --server.port $PORT --server.headless true --server.fileWatcherType none --browser.gatherUsageStats false
     healthCheckPath: /_stcore/health
     autoDeploy: true
