@@ -15,7 +15,7 @@ services:
       - key: ASHARE_RISK_FAST_START
         value: "1"
       - key: ASHARE_RISK_CLOUD_FAST_MODE
-        value: "1"
+        value: "0"
       - key: ASHARE_REALTIME_REFRESH_SECONDS
         value: "1"
       - key: ASHARE_MARKET_SNAPSHOT_MAX_AGE_SECONDS
