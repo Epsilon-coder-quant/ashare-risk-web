@@ -14,6 +14,11 @@ def main() -> None:
     namespace = {"__file__": str(Path(__file__).resolve()), "__name__": "restore_payload_full_market"}
     exec(compile(base64.b64decode(payload).decode("utf-8"), str(Path(__file__).resolve()), "exec"), namespace)
     namespace["main"]()
+    patch_file = ROOT / "cloud_runtime_patch.py"
+    if patch_file.exists():
+        patch_namespace = {"__file__": str(patch_file), "__name__": "cloud_runtime_patch"}
+        exec(compile(patch_file.read_text(encoding="utf-8"), str(patch_file), "exec"), patch_namespace)
+        patch_namespace["patch"](ROOT)
 
 
 if __name__ == "__main__":
