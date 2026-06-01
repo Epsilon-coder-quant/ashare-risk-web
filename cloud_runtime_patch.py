@@ -601,6 +601,10 @@ def patch(root: Path | str) -> None:
             'macro_meta = f"来源：宏观/期权实时参数 ｜ 更新时间：{human_time(macro_overlay.get(\'updated_at\'))}"',
             'macro_meta = f"来源：{macro_overlay.get(\'source\', \'宏观/期权实时参数\')} ｜ 更新时间：{human_time(macro_overlay.get(\'updated_at\'))}"',
         )
+        app = app.replace(
+            'macro_meta = f"来源：宏观/期权后台参数 ｜ 更新时间：{human_time(macro.get(\'updated_at\'))}"',
+            'macro_meta = f"来源：{macro.get(\'source\', \'宏观/期权后台参数\')} ｜ 更新时间：{human_time(macro.get(\'updated_at\'))}"',
+        )
         old = "    max_points = max(limit * max(len(rows), 1), limit)\n    if len(points) > max_points:\n"
         new = (
             "    active_codes = {normalize_stock_code(row.get(\"code\")) for row in rows if normalize_stock_code(row.get(\"code\"))}\n"
