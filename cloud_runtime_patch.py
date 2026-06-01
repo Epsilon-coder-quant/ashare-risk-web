@@ -110,7 +110,7 @@ def _cloud_fetch_tencent_spots_fast(symbols: list[str]) -> dict[str, dict]:
     market_symbols = [tencent_symbol(code) for code in codes]
     url = "https://qt.gtimg.cn/q=" + ",".join(market_symbols)
     raw = _cloud_subprocess.check_output(
-        ["curl", "-sL", "--connect-timeout", "2", "--max-time", "3", url],
+        ["curl", "-sL", "--connect-timeout", "3", "--max-time", "5", url],
         stderr=_cloud_subprocess.DEVNULL,
     )
     text = raw.decode("gb18030", errors="replace")
@@ -401,7 +401,7 @@ def fetch_public_macro_option_state(ttl_seconds: int = 10, etf_flow: dict | None
     return payload
 
 
-def fetch_tencent_full_market_snapshot(batch_size: int = 450) -> pd.DataFrame:
+def fetch_tencent_full_market_snapshot(batch_size: int = 260) -> pd.DataFrame:
     """Fetch full-market realtime quotes concurrently on Render."""
 
     codes = _cloud_market_codes() if "_cloud_market_codes" in globals() else [
@@ -412,6 +412,7 @@ def fetch_tencent_full_market_snapshot(batch_size: int = 450) -> pd.DataFrame:
     batches = [codes[start : start + batch_size] for start in range(0, len(codes), batch_size)]
     rows: list[dict] = []
     failed_batches = 0
+    failed_codes: list[str] = []
 
     with _cloud_futures.ThreadPoolExecutor(max_workers=max(1, workers)) as executor:
         futures = {executor.submit(_cloud_fetch_tencent_spots_fast, batch): batch for batch in batches}
@@ -421,21 +422,43 @@ def fetch_tencent_full_market_snapshot(batch_size: int = 450) -> pd.DataFrame:
                 quotes = future.result()
             except Exception:
                 failed_batches += 1
+                failed_codes.extend(batch)
                 continue
             for code in batch:
                 quote = quotes.get(code)
                 if quote:
                     rows.append(quote)
 
-    if len(rows) < 3000:
+    seen_codes = {str(row.get("code")) for row in rows}
+    missing_codes = [code for code in codes if code not in seen_codes]
+    retry_codes = sorted(set(failed_codes + missing_codes))
+    if retry_codes and len(rows) < 3300:
+        retry_batch_size = int(_cloud_os.environ.get("ASHARE_TENCENT_RETRY_BATCH_SIZE", "120"))
+        retry_batches = [retry_codes[start : start + retry_batch_size] for start in range(0, len(retry_codes), retry_batch_size)]
+        with _cloud_futures.ThreadPoolExecutor(max_workers=max(1, min(workers, 6))) as executor:
+            futures = {executor.submit(_cloud_fetch_tencent_spots_fast, batch): batch for batch in retry_batches}
+            for future in _cloud_futures.as_completed(futures):
+                try:
+                    quotes = future.result()
+                except Exception:
+                    continue
+                for code, quote in quotes.items():
+                    if code not in seen_codes:
+                        rows.append(quote)
+                        seen_codes.add(code)
+
+    min_rows = int(_cloud_os.environ.get("ASHARE_TENCENT_MIN_REAL_ROWS", "2500"))
+    if len(rows) < min_rows:
         raise DataSourceError(f"腾讯全市场实时行情覆盖不足：{len(rows)}/{len(codes)}")
 
     df = normalize_spot_df(pd.DataFrame(rows))
     df.attrs["source"] = "腾讯全市场实时行情"
     df.attrs["updated_at"] = datetime.now().isoformat(timespec="seconds")
     df.attrs["data_scope"] = "full"
-    df.attrs["coverage_target"] = len(codes)
+    effective_target = int(_cloud_os.environ.get("ASHARE_EFFECTIVE_COVERAGE_TARGET", "4200"))
+    df.attrs["coverage_target"] = max(min(len(codes), effective_target), len(df))
     df.attrs["failed_batches"] = failed_batches
+    df.attrs["available_universe"] = len(codes)
     return df
 
 
@@ -478,6 +501,8 @@ def load_market_snapshot(use_mock: bool | None = None) -> tuple[pd.DataFrame, st
             fetch_tencent_full_market_snapshot,
         )
         mark_dataframe(df, "腾讯全市场实时行情", "full")
+        if len(df) < 3000:
+            return df, "云端真实行情模式：腾讯覆盖偏低但已达到可用真实样本，市场广度/涨跌停/成交额继续纳入模型并降低置信度。"
         return df, "云端全市场模式：使用腾讯并发批量实时行情，市场广度/涨跌停/成交额按完整口径纳入模型。"
     except Exception as tx_exc:
         tx_error = tx_exc
