@@ -22,7 +22,7 @@ def main() -> None:
     namespace = {"__file__": str(Path(__file__).resolve()), "__name__": "restore_payload_full_market"}
     exec(compile(base64.b64decode(payload).decode("utf-8"), str(Path(__file__).resolve()), "exec"), namespace)
     namespace["main"]()
-    for patch_name in ("cloud_runtime_patch.py", "realtime_index_patch.py", "volume_refresh_patch.py"):
+    for patch_name in ("cloud_runtime_patch.py", "realtime_index_patch.py", "volume_refresh_patch.py", "startup_fast_patch.py"):
         _run_patch(patch_name)
 
 
