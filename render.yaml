@@ -4,7 +4,7 @@ services:
     runtime: python
     plan: free
     buildCommand: python restore_payload.py && pip install -r requirements.txt
-    startCommand: streamlit run app.py --server.address 0.0.0.0 --server.port $PORT --server.headless true --server.fileWatcherType none --browser.gatherUsageStats false
+    startCommand: streamlit run app.py --server.address 0.0.0.0 --server.port $PORT --server.headless true --server.fileWatcherType none --browser.gatherUsageStats false --server.enableCORS false --server.enableXsrfProtection false
     healthCheckPath: /_stcore/health
     autoDeploy: true
     envVars:
@@ -15,11 +15,11 @@ services:
       - key: ASHARE_RISK_FAST_START
         value: "1"
       - key: ASHARE_RISK_CLOUD_FAST_MODE
-        value: "0"
+        value: "1"
       - key: ASHARE_REALTIME_REFRESH_SECONDS
-        value: "3"
+        value: "8"
       - key: ASHARE_FULL_MARKET_REFRESH_SECONDS
-        value: "15"
+        value: "30"
       - key: ASHARE_MARKET_SNAPSHOT_MAX_AGE_SECONDS
         value: "1800"
       - key: ASHARE_MEMORY_CLEANUP_INTERVAL_SECONDS
