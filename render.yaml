@@ -4,7 +4,7 @@ services:
     runtime: python
     plan: free
     buildCommand: python restore_payload.py && pip install -r requirements.txt
-    startCommand: sh -c 'python render_background_updater.py --interval ${ASHARE_FULL_MARKET_REFRESH_SECONDS:-60} --initial-delay 25 & streamlit run app.py --server.address 0.0.0.0 --server.port $PORT --server.headless true --server.fileWatcherType none --browser.gatherUsageStats false --server.enableCORS false --server.enableXsrfProtection false'
+    startCommand: sh -c 'python render_background_updater.py --interval ${ASHARE_FULL_MARKET_REFRESH_SECONDS:-60} --initial-delay 90 & streamlit run app.py --server.address 0.0.0.0 --server.port $PORT --server.headless true --server.fileWatcherType none --browser.gatherUsageStats false --server.enableCORS false --server.enableXsrfProtection false'
     healthCheckPath: /_stcore/health
     autoDeploy: true
     envVars:
