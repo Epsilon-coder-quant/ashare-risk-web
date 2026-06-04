@@ -4,7 +4,7 @@ services:
     runtime: python
     plan: free
     buildCommand: python restore_payload.py && pip install -r requirements.txt
-    startCommand: streamlit run app.py --server.address 0.0.0.0 --server.port $PORT --server.headless true --server.fileWatcherType none --browser.gatherUsageStats false --server.enableCORS false --server.enableXsrfProtection false
+    startCommand: sh -c 'python render_background_updater.py --interval ${ASHARE_FULL_MARKET_REFRESH_SECONDS:-60} --initial-delay 25 & streamlit run app.py --server.address 0.0.0.0 --server.port $PORT --server.headless true --server.fileWatcherType none --browser.gatherUsageStats false --server.enableCORS false --server.enableXsrfProtection false'
     healthCheckPath: /_stcore/health
     autoDeploy: true
     envVars:
@@ -20,6 +20,10 @@ services:
         value: "15"
       - key: ASHARE_FULL_MARKET_REFRESH_SECONDS
         value: "60"
+      - key: ASHARE_TENCENT_WORKERS
+        value: "3"
+      - key: ASHARE_TENCENT_BATCH_SIZE
+        value: "260"
       - key: ASHARE_MARKET_SNAPSHOT_MAX_AGE_SECONDS
         value: "1800"
       - key: ASHARE_MEMORY_CLEANUP_INTERVAL_SECONDS
