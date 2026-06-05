@@ -10,6 +10,27 @@ DATA_LOADER_APPEND = r'''
 # Render nonblocking startup override v2.
 
 
+_startup_original_load_runtime_market_snapshot = load_runtime_market_snapshot
+
+
+def load_runtime_market_snapshot(max_age_seconds: int = MARKET_SNAPSHOT_MAX_AGE_SECONDS) -> tuple[pd.DataFrame | None, str | None]:
+    """Preserve runtime snapshot coverage metadata written by the background updater."""
+
+    df, warning = _startup_original_load_runtime_market_snapshot(max_age_seconds=max_age_seconds)
+    if df is None:
+        return df, warning
+    try:
+        payload = read_runtime_json("market_snapshot_latest.json")
+        coverage_target = payload.get("coverage_target")
+        if coverage_target:
+            df.attrs["coverage_target"] = int(coverage_target)
+        if payload.get("record_count"):
+            df.attrs["record_count"] = int(payload.get("record_count"))
+    except Exception:
+        pass
+    return df, warning
+
+
 _startup_original_load_market_snapshot = load_market_snapshot
 
 

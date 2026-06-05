@@ -24,10 +24,14 @@ services:
         value: "3"
       - key: ASHARE_TENCENT_BATCH_SIZE
         value: "260"
+      - key: ASHARE_TENCENT_CHECKPOINT_ROWS
+        value: "500"
+      - key: ASHARE_TENCENT_PROGRESSIVE_MAX_SECONDS
+        value: "85"
       - key: ASHARE_TENCENT_MIN_REAL_ROWS
         value: "1500"
       - key: ASHARE_EFFECTIVE_COVERAGE_TARGET
-        value: "2500"
+        value: "5000"
       - key: ASHARE_MARKET_SNAPSHOT_MAX_AGE_SECONDS
         value: "1800"
       - key: ASHARE_MEMORY_CLEANUP_INTERVAL_SECONDS
